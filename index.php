@@ -118,6 +118,11 @@
 
 	//searches for arbitrage opportunities going from USD -> BTC -> DOGE -> USD
 	function search_arbitrage($first_currency, $second_currency, $third_currency) {
+		//This is the flow of money we are looking for, either clockwise or counterclockwise
+		//		first currency
+		//		/			\
+		//	 second -------third
+
 		//variables
 		$markets = api_query("getmarkets");
 		$current_market_id = 0;
@@ -126,7 +131,10 @@
 		$second_buy = 0;
 		$second_sell = 0;
 		$third_buy = 0;
-		$third_sell = 0; 
+		$third_sell = 0;
+		$first_currency_sub = substr($first_currency, 0, -4); 
+		$second_currency_sub = substr($second_currency, 0, -4);
+		$third_currency_sub = substr($third_currency, 0, -4);
 
 		//grab prices for the labels we're looking at
 		foreach($markets as $x => $y) {
@@ -156,33 +164,41 @@
 		}
 
 		//calculates if arbitrage exists
+		//TODO fix whatever bug is here so we recognize the correct direction to trade in
 		$d = $first_buy / $second_buy;
 		$e = $second_buy / $third_sell;
 		$f = $third_sell / $first_buy;
 
+		//if d = e * f, there is perfect balance and therefore no arbitrage opportunity
 		if($d == $e * $f) {
 			echo '<p>No arbitrage here</p>';
 		}
+		//if d > e * f, we go counter clockwise around the triangle
 		else if($d > $e * $f){
-			echo "<p>Arbitrage from BTC to $second_currency to $third_currency to BTC</p>";
+			echo "<p>Arbitrage from BTC to $third_currency_sub to $second_currency_sub to BTC</p>";
 
 			$first = 1 * $third_buy;
 			$second = $first * $second_buy;
-			$third = $second / $third_sell;
+			$third = $second / $first_sell;
 
-			echo "<p>= $third BTC</p>";
+			echo "<p>1 BTC = $first $third_currency_sub ($third_buy)</p>";
+			echo "<p>= $second $second_currency_sub ($second_buy)</p>";
+			echo "<p>= $third BTC ($first_sell)</p>";
 
 			$gain = ($third - 1) * 100;
 			$rounded_gain = number_format((float)$gain, 2, '.', '');
 		}
+		//if d < e * f, we go clockwise around the triangle
 		else {
-			echo "<p>Arbitrage from BTC to $third_currency to $second_currency to BTC</p>";
+			echo "<p>Arbitrage from BTC to $second_currency_sub to $third_currency_sub to BTC</p>";
 
 			$first = 1 * $first_buy;
 			$second = $first / $second_buy;
 			$third = $second / $third_sell;
 
-			echo "<p>= $third BTC</p>";
+			echo "<p>1 BTC = $first $second_currency_sub ($first_buy)</p>";
+			echo "<p>= $second $third_currency_sub ($second_buy)</p>";
+			echo "<p>= $third BTC ($third_sell)</p>";
 
 			$gain = ($third - 1) * 100;
 			$rounded_gain = number_format((float)$gain, 2, '.', '');
