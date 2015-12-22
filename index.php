@@ -164,54 +164,60 @@
 		}
 
 		//calculates if arbitrage exists
-		//TODO fix whatever bug is here so we recognize the correct direction to trade in
-		$d = $first_buy / $second_buy;
-		$e = $second_buy / $third_sell;
-		$f = $third_sell / $first_buy;
+		$d = $third_buy;
+		$e = 1 / $second_sell;
+		$f = $first_buy;
 
 		//if d = e * f, there is perfect balance and therefore no arbitrage opportunity
 		if($d == $e * $f) {
 			echo '<p>No arbitrage here</p>';
 		}
-		//if d > e * f, we go counter clockwise around the triangle
-		else if($d > $e * $f){
-			echo "<p>Arbitrage from BTC to $third_currency_sub to $second_currency_sub to BTC</p>";
+		else {
+			//test first direction
+			echo "<p>BTC to $third_currency_sub to $second_currency_sub to BTC</p>";
 
-			$first = 1 * $third_buy;
-			$second = $first * $second_buy;
-			$third = $second / $first_sell;
+			//a little math happens here to calculate the resulting BTC value after the exchanges
+			$first = 1 / $third_buy;
+			$second = $first / $second_buy;
+			$third = $second * $first_sell;
 
+			//echos for testing purposes
 			echo "<p>1 BTC = $first $third_currency_sub ($third_buy)</p>";
 			echo "<p>= $second $second_currency_sub ($second_buy)</p>";
 			echo "<p>= $third BTC ($first_sell)</p>";
 
+			//percent gain
 			$gain = ($third - 1) * 100;
 			$rounded_gain = number_format((float)$gain, 2, '.', '');
-		}
-		//if d < e * f, we go clockwise around the triangle
-		else {
-			echo "<p>Arbitrage from BTC to $second_currency_sub to $third_currency_sub to BTC</p>";
+			echo "<p>Percent gain: $rounded_gain";
 
-			$first = 1 * $first_buy;
-			$second = $first / $second_buy;
-			$third = $second / $third_sell;
+			//test other direction
+			echo "<p>BTC to $second_currency_sub to $third_currency_sub to BTC</p>";
 
+			//a little math happens here to calculate the resulting BTC value after the exchanges
+			$first = 1 / $first_buy;
+			$second = $first * $second_sell;
+			$third = $second * $third_sell;
+
+			//echos for testing purposes
 			echo "<p>1 BTC = $first $second_currency_sub ($first_buy)</p>";
 			echo "<p>= $second $third_currency_sub ($second_buy)</p>";
 			echo "<p>= $third BTC ($third_sell)</p>";
 
+			//percent gain
 			$gain = ($third - 1) * 100;
 			$rounded_gain = number_format((float)$gain, 2, '.', '');
 		}
 
 		echo "<p>Percent gain: $rounded_gain";
 
-		if($gain > .1) {
-			echo '<p>Make the trade!</p>';
-		}
-		else {
-			echo '<p>Do not make the trade!</p>';
-		}
+		//uncomment this and change the value to get feedback on whether or not to make the trade
+		// if($gain > .1) {
+		// 	echo '<p>Make the trade!</p>';
+		// }
+		// else {
+		// 	echo '<p>Do not make the trade!</p>';
+		// }
 	}
 
 	search_arbitrage('DOGE/BTC', 'DOGE/LTC', 'LTC/BTC');
@@ -220,16 +226,16 @@
 	echo '<hr>';
 	search_arbitrage('ETH/BTC', 'ETH/LTC', 'LTC/BTC');
 	echo '<hr>';
-	search_arbitrage('NBT/BTC', 'NBT/LTC', 'LTC/BTC');
-	echo '<hr>';
-	search_arbitrage('XRP/BTC', 'XRP/LTC', 'LTC/BTC');
-	echo '<hr>';
+	// search_arbitrage('NBT/BTC', 'NBT/LTC', 'LTC/BTC');
+	// echo '<hr>';
+	// search_arbitrage('XRP/BTC', 'XRP/LTC', 'LTC/BTC');
+	// echo '<hr>';
 	search_arbitrage('PPC/BTC', 'PPC/LTC', 'LTC/BTC');
 	echo '<hr>';
-	search_arbitrage('ZRC/BTC', 'ZRC/LTC', 'LTC/BTC');
-	echo '<hr>';
+	// search_arbitrage('ZRC/BTC', 'ZRC/LTC', 'LTC/BTC');
+	// echo '<hr>';
 	search_arbitrage('NXT/BTC', 'NXT/LTC', 'LTC/BTC');
 	echo '<hr>';
-	search_arbitrage('XPY/BTC', 'XPY/LTC', 'LTC/BTC');
-	echo '<hr>';
+	// search_arbitrage('XPY/BTC', 'XPY/LTC', 'LTC/BTC');
+	// echo '<hr>';
 ?>
