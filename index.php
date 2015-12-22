@@ -117,17 +117,18 @@
 	}
 
 	//searches for arbitrage opportunities going from USD -> BTC -> DOGE -> USD
-	function search_arbitrage() {
+	function search_arbitrage($first_currency, $second_currency, $third_currency) {
+		//variables
 		$markets = api_query("getmarkets");
-		$first_currency = 'BTC/USD';
-		$second_currency = 'DOGE/BTC';
-		$third_currency = 'DOGE/USD';
-
 		$current_market_id = 0;
-		$btcusd = 0;
-		$dogebtc = 0;
-		$dogeusd = 0; 
+		$first_buy = 0;
+		$first_sell = 0;
+		$second_buy = 0;
+		$second_sell = 0;
+		$third_buy = 0;
+		$third_sell = 0; 
 
+		//grab prices for the labels we're looking at
 		foreach($markets as $x => $y) {
 			foreach($y as $z => $a) {
 				foreach($a as $b => $c) {
@@ -137,30 +138,82 @@
 					if($b === 'label') {
 						switch($c) {
 							case $first_currency:
-								$btcusd = find_market_buy($current_market_id);
+								$first_buy = find_market_buy($current_market_id);
+								$first_sell = find_market_sell($current_market_id);
 								break;
 							case $second_currency:
-								$dogebtc = find_market_buy($current_market_id);
+								$second_buy = find_market_buy($current_market_id);
+								$second_sell = find_market_sell($current_market_id);
 								break;
 							case $third_currency:
-								$dogeusd = find_market_sell($current_market_id);
+								$third_buy = find_market_buy($current_market_id);
+								$third_sell = find_market_sell($current_market_id);
 								break;
 						}
 					}
 				}
 			}
 		}
-		echo "$btcusd, $dogebtc, $dogeusd ";
-		$d = $btcusd / $dogebtc;
-		$e = $dogebtc / $dogeusd;
-		$f = $dogeusd / $btcusd;
+
+		//calculates if arbitrage exists
+		$d = $first_buy / $second_buy;
+		$e = $second_buy / $third_sell;
+		$f = $third_sell / $first_buy;
+
 		if($d == $e * $f) {
-			echo 'No arbitrage here';
+			echo '<p>No arbitrage here</p>';
 		}
-		else{
-			echo 'Arbitrage!!!';
+		else if($d > $e * $f){
+			echo "<p>Arbitrage from BTC to $second_currency to $third_currency to BTC</p>";
+
+			$first = 1 * $third_buy;
+			$second = $first * $second_buy;
+			$third = $second / $third_sell;
+
+			echo "<p>= $third BTC</p>";
+
+			$gain = ($third - 1) * 100;
+			$rounded_gain = number_format((float)$gain, 2, '.', '');
+		}
+		else {
+			echo "<p>Arbitrage from BTC to $third_currency to $second_currency to BTC</p>";
+
+			$first = 1 * $first_buy;
+			$second = $first / $second_buy;
+			$third = $second / $third_sell;
+
+			echo "<p>= $third BTC</p>";
+
+			$gain = ($third - 1) * 100;
+			$rounded_gain = number_format((float)$gain, 2, '.', '');
+		}
+
+		echo "<p>Percent gain: $rounded_gain";
+
+		if($gain > .1) {
+			echo '<p>Make the trade!</p>';
+		}
+		else {
+			echo '<p>Do not make the trade!</p>';
 		}
 	}
 
-	search_arbitrage();
+	search_arbitrage('DOGE/BTC', 'DOGE/LTC', 'LTC/BTC');
+	echo '<hr>';
+	search_arbitrage('DASH/BTC', 'DASH/LTC', 'LTC/BTC');
+	echo '<hr>';
+	search_arbitrage('ETH/BTC', 'ETH/LTC', 'LTC/BTC');
+	echo '<hr>';
+	search_arbitrage('NBT/BTC', 'NBT/LTC', 'LTC/BTC');
+	echo '<hr>';
+	search_arbitrage('XRP/BTC', 'XRP/LTC', 'LTC/BTC');
+	echo '<hr>';
+	search_arbitrage('PPC/BTC', 'PPC/LTC', 'LTC/BTC');
+	echo '<hr>';
+	search_arbitrage('ZRC/BTC', 'ZRC/LTC', 'LTC/BTC');
+	echo '<hr>';
+	search_arbitrage('NXT/BTC', 'NXT/LTC', 'LTC/BTC');
+	echo '<hr>';
+	search_arbitrage('XPY/BTC', 'XPY/LTC', 'LTC/BTC');
+	echo '<hr>';
 ?>
