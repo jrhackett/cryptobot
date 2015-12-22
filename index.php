@@ -201,7 +201,7 @@
 
 			//echos for testing purposes
 			echo "<p>1 BTC = $first $second_currency_sub ($first_buy)</p>";
-			echo "<p>= $second $third_currency_sub ($second_buy)</p>";
+			echo "<p>= $second $third_currency_sub ($second_sell)</p>";
 			echo "<p>= $third BTC ($third_sell)</p>";
 
 			//percent gain
