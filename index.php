@@ -94,7 +94,7 @@
 			$second = $first / $second_pair_array[2];
 			$third = $second * $first_pair_array[0];
 
-			$max_trades = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 1, 3, 3);
+			$first_max_trades = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 1, 3, 3);
 
 			//echos for testing purposes
 			echo "<p>1 BTC = $first $third_pair_sub ($third_pair_array[2])</p>";
@@ -102,10 +102,10 @@
 			echo "<p>= $third BTC ($first_pair_array[0])</p>";
 
 			//percent gain
-			$gain = ($third - 1) * 100;
-			$rounded_gain = number_format((float)$gain, 2, '.', '');
-			echo "<p>Percent gain: $rounded_gain";
-			echo "<p>You can make up to $max_trades trades at these prices</p>";
+			$first_gain = ($third - 1) * 100;
+			$first_rounded_gain = number_format((float)$first_gain, 2, '.', '');
+			echo "<p>Percent gain: $first_rounded_gain";
+			echo "<p>You can make up to $first_max_trades trades at these prices</p>";
 
 			echo "<p>Testing arbitrage from BTC to $second_pair_sub to $third_pair_sub to BTC</p>";
 
@@ -113,7 +113,7 @@
 			$second = $first / $second_pair_array[0];
 			$third = $second * $third_pair_array[0];
 
-			$max_trades = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 3, 1, 1);
+			$second_max_trades = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 3, 1, 1);
 
 			//echos for testing purposes
 			echo "<p>1 BTC = $first $second_currency_sub ($first_pair_array[2])</p>";
@@ -121,12 +121,37 @@
 			echo "<p>= $third BTC ($third_pair_array[0])</p>";
 
 			//percent gain
-			$gain = ($third - 1) * 100;
-			$rounded_gain = number_format((float)$gain, 2, '.', '');
-			echo "<p>Percent gain: $rounded_gain";
-			echo "<p>You can make up to $max_trades trades at these prices</p>";
+			$second_gain = ($third - 1) * 100;
+			$second_rounded_gain = number_format((float)$second_gain, 2, '.', '');
+			echo "<p>Percent gain: $second_rounded_gain";
+			echo "<p>You can make up to $second_max_trades trades at these prices</p>";
+
+			if($first_gain > $second_gain && $first_gain > 0.3) {
+				return array(1, 0, $first_max_trades);
+			}
+			else if($second_gain > $first_gain && $second_gain > 0.3) {
+				return array(0, 1, $second_max_trades);
+			}
+			else {
+				return array(0, 0, 0);
+			}
 		}
 	}
 
-	search_arbitrage('BTC_DASH', 'XMR_DASH', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
+	function handle_arbitrage() {
+		$array = search_arbitrage('BTC_DASH', 'XMR_DASH', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
+
+		//make trades below
+		if($array[0] === 1 && $array[1] === 0) {
+			echo "Make $array[2] trades from BTC to XMR to DASH to BTC";
+		}
+		else if($array[1] === 1 && $array[0] === 0) {
+			echo "Make $array[2] trades from BTC to DASH to XMR to BTC";
+		}
+		else {
+			echo '<p>There are no profitable trades between these currencies at the moment</p>';
+		}
+	}
+
+	handle_arbitrage();
 ?>
