@@ -1,241 +1,132 @@
 <?php
-	function api_query($method, array $req = array()) {
-	        // API settings
-	        $key = 'a715756228b7afba20e239391a97cef50628c409'; // your API-key
-	        $secret = 'e821c5bbc65414ace7b4818aead07de1e22f21ca2ffd37d156cc0b5589be34f15b3c0094bf9af915'; // your Secret-key
-	 
-	        $req['method'] = $method;
-	        $mt = explode(' ', microtime());
-	        $req['nonce'] = $mt[1];
-	       
-	        // generate the POST data string
-	        $post_data = http_build_query($req, '', '&');
+	//Used as part of a bot to facilitate automatic crypto currency trading on Poloniex.com
+	//written by Jacob Hackett
 
-	        $sign = hash_hmac("sha512", $post_data, $secret);
-	 
-	        // generate the extra headers
-	        $headers = array(
-	                'Sign: '.$sign,
-	                'Key: '.$key,
-	        );
-	 
-	        // our curl handle (initialize if required)
-	        static $ch = null;
-	        if (is_null($ch)) {
-	                $ch = curl_init();
-	                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	                curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; Cryptsy API PHP client; '.php_uname('s').'; PHP/'.phpversion().')');
-	        }
-	        curl_setopt($ch, CURLOPT_URL, 'https://api.cryptsy.com/api');
-	        curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
-	        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-	        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-	 
-	        // run the query
-	        $res = curl_exec($ch);
-	        if ($res === false) throw new Exception('Could not get reply: '.curl_error($ch));
-	        $dec = json_decode($res, true);
-	        if (!$dec) throw new Exception('Invalid data received, please make sure connection is working and requested API exists');
-	        return $dec;
-	}
- 
- 	//these are all the example api_queries we can perform and how to perform them
+	require 'poloniex_wrapper.php';
 
-	//$result = api_query("getinfo");
+	//returns array holding best asking price, the quantity for that price, best bid price, and best quantity for that price
+	function find_best_prices($pair, $key, $secret) {
+		$object = new poloniex($key, $secret);
+		$orders = $object->get_order_book($pair);
+		
+		//bid is buy order
+		//ask is a sell order
 
-	//$result = api_query("getmarkets");
+		$best_bid = 0.0;
+		$best_bid_quantity = 0;
+		$best_ask = 10000000.0;
+		$best_ask_quantity = 0;
+		$check = false;
 
-	//$result = api_query("mytransactions");
-
-	//$result = api_query("markettrades", array("marketid" => 26));
-
-	//$result = api_query("marketorders", array("marketid" => 26));
-
-	//$result = api_query("mytrades", array("marketid" => 26, "limit" => 1000));
-
-	//$result = api_query("allmytrades");
-
-	//$result = api_query("myorders", array("marketid" => 26));
-
-	//$result = api_query("allmyorders");
-
-	//$result = api_query("createorder", array("marketid" => 26, "ordertype" => "Sell", "quantity" => 1000, "price" => 0.00031000));
-
-	//$result = api_query("cancelorder", array("orderid" => 139567));
-	 
-	//$result = api_query("calculatefees", array("ordertype" => 'Buy', 'quantity' => 1000, 'price' => '0.005'));
-
-	//echo "<pre>".print_r($result, true)."</pre>";
-
-
-
-	//returns an array holding the lowest sell price in the first index and the highest buy price in the second index
-	function find_market_prices($marketid) {
-		$result = api_query("marketorders", array("marketid" => $marketid));
-
-		$lowestsellprice = 10000000.0;
-		$highestbuyprice = 0.0;
-
-		foreach($result as $x => $y) {
-			foreach($y as $z => $a) {
-				foreach($a as $b => $c) {
-					foreach($c as $d => $e) {
-						if($d === 'sellprice') {
-							if($e < $lowestsellprice) {
-								$lowestsellprice = $e;
-							}
+		//TODO handle the isFrozen variable to assure that we are not trading with frozen markets
+		foreach($orders as $one => $two) {
+			//$one denotes asks vs bids
+			foreach($two as $three => $four) {
+				foreach($four as $five => $six) {
+					//$five denotes price(0) or quantity(1), $six is value
+					//beware that index 0 does not have anything meaningful
+					if($one === 'asks') {
+						//if we just found the best price, update the quantity
+						if($check === true && $five === 1) {
+							$best_ask_quantity = $six;
+							$check = false;
 						}
-						if($d === 'buyprice') {
-							if($e > $highestbuyprice) {
-								$highestbuyprice = $e;
-							}
+						//if this is the best price, update it
+						if($five === 0 && $six < $best_ask) {	
+							$best_ask = $six;
+							$check = true;
+						}
+					}
+					else if ($one === 'bids') {
+						//if we just found the best price, update the quantity
+						if($check === true && $five === 1) {
+							$best_bid_quantity = $six;
+							$check = false;
+						}
+						//if this is the best price, update it
+						if($five === 0 && $six > $best_bid) {
+							$best_bid = $six;
+							$check = true;
 						}
 					}
 				}
 			}
 		}
 
-		return array($lowestsellprice, $highestbuyprice);
+		return array($best_ask, $best_ask_quantity, $best_bid, $best_bid_quantity);
 	}
 
-	//returns best buy price for given market
-	function find_market_buy($marketid) {
-		foreach(find_market_prices($marketid) as $x => $y) {
-			if($x === 1) {
-				return $y;
+	function find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, $one, $two, $three) {
+			$max_trades = 10000000;
+
+			if($third_pair_array[$three] < $max_trades) {
+				$max_trades = $third_pair_array[$three];
 			}
-		}
+			if($second_pair_array[$two] < $max_trades) {
+				$max_trades = $second_pair_array[$two];
+			}
+			if($tfirst_pair_array[$one] < $max_trades) {
+				$max_trades = $first_pair_array[$one];
+			}
+			return $max_trades;
 	}
 
-	//returns best sell price for given market
-	function find_market_sell($marketid) {
-		foreach(find_market_prices($marketid) as $x => $y) {
-			if($x === 0) {
-				return $y;
-			}
-		}
-	}
+	function search_arbitrage($first_pair, $second_pair, $third_pair, $key, $secret) {
+		$first_pair_array = find_best_prices($first_pair, $key, $secret);
+		$second_pair_array = find_best_prices($second_pair, $key, $secret);
+		$third_pair_array = find_best_prices($third_pair, $key, $secret);
 
-	//searches for arbitrage opportunities going from USD -> BTC -> DOGE -> USD
-	function search_arbitrage($first_currency, $second_currency, $third_currency) {
-		//This is the flow of money we are looking for, either clockwise or counterclockwise
-		//		first currency
-		//		/			\
-		//	 second -------third
+		$first_pair_sub = substr($first_pair, 4);
+		$second_pair_sub = substr($second_pair, 4);
+		$third_pair_sub = substr($third_pair, 4);
 
-		//variables
-		$markets = api_query("getmarkets");
-		$current_market_id = 0;
-		$first_buy = 0;
-		$first_sell = 0;
-		$second_buy = 0;
-		$second_sell = 0;
-		$third_buy = 0;
-		$third_sell = 0;
-		$first_currency_sub = substr($first_currency, 0, -4); 
-		$second_currency_sub = substr($second_currency, 0, -4);
-		$third_currency_sub = substr($third_currency, 0, -4);
+		$d = $third_pair_array[2];			//third pair's best bid price
+		$e = 1 / $second_pair_array[0];		//second pair's best ask price
+		$f = $first_pair_array[2];			//first pair's best bid price
 
-		//grab prices for the labels we're looking at
-		foreach($markets as $x => $y) {
-			foreach($y as $z => $a) {
-				foreach($a as $b => $c) {
-					if($b === 'marketid') {
-						$current_market_id = $c;
-					}
-					if($b === 'label') {
-						switch($c) {
-							case $first_currency:
-								$first_buy = find_market_buy($current_market_id);
-								$first_sell = find_market_sell($current_market_id);
-								break;
-							case $second_currency:
-								$second_buy = find_market_buy($current_market_id);
-								$second_sell = find_market_sell($current_market_id);
-								break;
-							case $third_currency:
-								$third_buy = find_market_buy($current_market_id);
-								$third_sell = find_market_sell($current_market_id);
-								break;
-						}
-					}
-				}
-			}
-		}
-
-		//calculates if arbitrage exists
-		$d = $third_buy;
-		$e = 1 / $second_sell;
-		$f = $first_buy;
-
-		//if d = e * f, there is perfect balance and therefore no arbitrage opportunity
-		if($d == $e * $f) {
+		if($d === $e * $f) {
 			echo '<p>No arbitrage here</p>';
 		}
 		else {
-			//test first direction
-			echo "<p>BTC to $third_currency_sub to $second_currency_sub to BTC</p>";
+			echo "<p>Testing arbitrage from BTC to $third_pair_sub to $second_pair_sub to BTC</p>";
 
-			//a little math happens here to calculate the resulting BTC value after the exchanges
-			$first = 1 / $third_buy;
-			$second = $first / $second_buy;
-			$third = $second * $first_sell;
+			$first = 1 / $third_pair_array[2];
+			$second = $first / $second_pair_array[2];
+			$third = $second * $first_pair_array[0];
+
+			$max_trades = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 1, 3, 3);
 
 			//echos for testing purposes
-			echo "<p>1 BTC = $first $third_currency_sub ($third_buy)</p>";
-			echo "<p>= $second $second_currency_sub ($second_buy)</p>";
-			echo "<p>= $third BTC ($first_sell)</p>";
+			echo "<p>1 BTC = $first $third_pair_sub ($third_pair_array[2])</p>";
+			echo "<p>= $second $second_pair_sub ($second_pair_array[2])</p>";
+			echo "<p>= $third BTC ($first_pair_array[0])</p>";
 
 			//percent gain
 			$gain = ($third - 1) * 100;
 			$rounded_gain = number_format((float)$gain, 2, '.', '');
 			echo "<p>Percent gain: $rounded_gain";
+			echo "<p>You can make up to $max_trades trades at these prices</p>";
 
-			//test other direction
-			echo "<p>BTC to $second_currency_sub to $third_currency_sub to BTC</p>";
+			echo "<p>Testing arbitrage from BTC to $second_pair_sub to $third_pair_sub to BTC</p>";
 
-			//a little math happens here to calculate the resulting BTC value after the exchanges
-			$first = 1 / $first_buy;
-			$second = $first * $second_sell;
-			$third = $second * $third_sell;
+			$first = 1 / $first_pair_array[2];
+			$second = $first / $second_pair_array[0];
+			$third = $second * $third_pair_array[0];
+
+			$max_trades = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 3, 1, 1);
 
 			//echos for testing purposes
-			echo "<p>1 BTC = $first $second_currency_sub ($first_buy)</p>";
-			echo "<p>= $second $third_currency_sub ($second_sell)</p>";
-			echo "<p>= $third BTC ($third_sell)</p>";
+			echo "<p>1 BTC = $first $second_currency_sub ($first_pair_array[2])</p>";
+			echo "<p>= $second $third_currency_sub ($second_pair_array[0])</p>";
+			echo "<p>= $third BTC ($third_pair_array[0])</p>";
 
 			//percent gain
 			$gain = ($third - 1) * 100;
 			$rounded_gain = number_format((float)$gain, 2, '.', '');
+			echo "<p>Percent gain: $rounded_gain";
+			echo "<p>You can make up to $max_trades trades at these prices</p>";
 		}
-
-		echo "<p>Percent gain: $rounded_gain";
-
-		//uncomment this and change the value to get feedback on whether or not to make the trade
-		// if($gain > .1) {
-		// 	echo '<p>Make the trade!</p>';
-		// }
-		// else {
-		// 	echo '<p>Do not make the trade!</p>';
-		// }
 	}
 
-	search_arbitrage('DOGE/BTC', 'DOGE/LTC', 'LTC/BTC');
-	echo '<hr>';
-	search_arbitrage('DASH/BTC', 'DASH/LTC', 'LTC/BTC');
-	echo '<hr>';
-	search_arbitrage('ETH/BTC', 'ETH/LTC', 'LTC/BTC');
-	echo '<hr>';
-	// search_arbitrage('NBT/BTC', 'NBT/LTC', 'LTC/BTC');
-	// echo '<hr>';
-	// search_arbitrage('XRP/BTC', 'XRP/LTC', 'LTC/BTC');
-	// echo '<hr>';
-	search_arbitrage('PPC/BTC', 'PPC/LTC', 'LTC/BTC');
-	echo '<hr>';
-	// search_arbitrage('ZRC/BTC', 'ZRC/LTC', 'LTC/BTC');
-	// echo '<hr>';
-	search_arbitrage('NXT/BTC', 'NXT/LTC', 'LTC/BTC');
-	echo '<hr>';
-	// search_arbitrage('XPY/BTC', 'XPY/LTC', 'LTC/BTC');
-	// echo '<hr>';
+	search_arbitrage('BTC_DASH', 'XMR_DASH', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
 ?>
