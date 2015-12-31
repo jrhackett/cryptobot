@@ -56,21 +56,8 @@
 		return array($best_ask, $best_ask_quantity, $best_bid, $best_bid_quantity);
 	}
 
-	function find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, $one, $two, $three) {
-			$max_trades = 10000000;
-
-			if($third_pair_array[$three] < $max_trades) {
-				$max_trades = $third_pair_array[$three];
-			}
-			if($second_pair_array[$two] < $max_trades) {
-				$max_trades = $second_pair_array[$two];
-			}
-			if($tfirst_pair_array[$one] < $max_trades) {
-				$max_trades = $first_pair_array[$one];
-			}
-			return $max_trades;
-	}
-
+	//returns an array containing either a 1 or 0 in the first 2 indices to indicate which direction to trade in
+	//this array will also contain info about how many trades to make
 	function search_arbitrage($first_pair, $second_pair, $third_pair, $key, $secret) {
 		$first_pair_array = find_best_prices($first_pair, $key, $secret);
 		$second_pair_array = find_best_prices($second_pair, $key, $secret);
@@ -94,8 +81,6 @@
 			$second = $first / $second_pair_array[2];
 			$third = $second * $first_pair_array[0];
 
-			$first_max_trades = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 1, 3, 3);
-
 			//echos for testing purposes
 			echo "<p>1 BTC = $first $third_pair_sub ($third_pair_array[2])</p>";
 			echo "<p>= $second $second_pair_sub ($second_pair_array[2])</p>";
@@ -105,15 +90,12 @@
 			$first_gain = ($third - 1) * 100;
 			$first_rounded_gain = number_format((float)$first_gain, 2, '.', '');
 			echo "<p>Percent gain: $first_rounded_gain";
-			echo "<p>You can make up to $first_max_trades trades at these prices</p>";
 
 			echo "<p>Testing arbitrage from BTC to $second_pair_sub to $third_pair_sub to BTC</p>";
 
 			$first = 1 / $first_pair_array[2];
 			$second = $first / $second_pair_array[0];
 			$third = $second * $third_pair_array[0];
-
-			$second_max_trades = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 3, 1, 1);
 
 			//echos for testing purposes
 			echo "<p>1 BTC = $first $second_currency_sub ($first_pair_array[2])</p>";
@@ -124,13 +106,12 @@
 			$second_gain = ($third - 1) * 100;
 			$second_rounded_gain = number_format((float)$second_gain, 2, '.', '');
 			echo "<p>Percent gain: $second_rounded_gain";
-			echo "<p>You can make up to $second_max_trades trades at these prices</p>";
 
 			if($first_gain > $second_gain && $first_gain > 0.3) {
-				return array(1, 0, $first_max_trades);
+				return array(1, 0, 'work in progress');
 			}
 			else if($second_gain > $first_gain && $second_gain > 0.3) {
-				return array(0, 1, $second_max_trades);
+				return array(0, 1, 'work in progress');
 			}
 			else {
 				return array(0, 0, 0);
