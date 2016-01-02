@@ -92,7 +92,7 @@
 
 			//checking if max_one is bounded by the amount we can buy in the second and third
 			if($max_one * $second_pair_array[0] > $second_pair_array[1]) {
-				$max_one = $second_pair_array[1] / $second_pair_array[0];
+				$max_one = $second_pair_array[1] * $second_pair_array[0];
 			}
 
 			//the most we can sell of the second currency is either the limit by how much we bought of the first or by the bid order -- whichever is less
@@ -105,7 +105,7 @@
 			}
 
 			//the most we can sell of the third currency is either the limit by how much we have of the second or by the bid order -- whichever is elss
-			$max_three = (($max_two / $first_pair_array[2]) < $first_pair_array[3]) ? ($max_two / $first_pair_array[2]) : $first_pair_array[3];
+			$max_three = (($max_two * $first_pair_array[2]) < $first_pair_array[3]) ? ($max_two * $first_pair_array[2]) : $first_pair_array[3];
 
 			//some variables to calculate profit
 			$starting = $max_one * $second_pair_array[0];
@@ -173,9 +173,9 @@
 			echo "<p><br>Trade $max_trade_array2[4] BTC for $max_trades_array2[0] XMR. Buy $max_trades_array2[1] DASH with XMR. Sell DASH for $max_trades_array2[2] BTC. Profit = $max_trades_array2[3]%</p>";
 			
 			//echos for prices for testing purposes
-			// echo "<p>DASH_BTC $first_pair_array[0] $first_pair_array[1] $first_pair_array[2] $first_pair_array[3] </p>";
-			// echo "<p>DASH_XMR $second_pair_array[0] $second_pair_array[1] $second_pair_array[2] $second_pair_array[3] </p>";
-			// echo "<p>XMR_BTC $third_pair_array[0] $third_pair_array[1] $third_pair_array[2] $third_pair_array[3] </p>";
+			echo "<p>DASH_BTC $first_pair_array[0] $first_pair_array[1] $first_pair_array[2] $first_pair_array[3] </p>";
+			echo "<p>DASH_XMR $second_pair_array[0] $second_pair_array[1] $second_pair_array[2] $second_pair_array[3] </p>";
+			echo "<p>XMR_BTC $third_pair_array[0] $third_pair_array[1] $third_pair_array[2] $third_pair_array[3] </p>";
 
 			//TODO add better returns to be handled in handle_arbitrage
 		}
