@@ -57,27 +57,61 @@
 	}
 
 	//calculates the amount of the each trade to make
-	//TODO fix this up... not working properly yet
 	function find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, $direction, $volume) {
 		//first to second to third to first
 		if($direction === 0) {
-			$max_one = ($volume < ($first_pair_array[3] * $first_pair_array[2])) ? $volume : ($first_pair_array[3] * $first_pair_array[2]);
-			$max_two = (($max_one * $second_pair_array[0]) < $second_pair_array[1]) ? ($max_one * $second_pair_array[0]) : $second_pair_array[1];
-			$max_three = (($max_two * $third_pair_array[0]) < $third_pair_array[1]) ? ($max_two * $third_pair_array[0]) : $third_pair_array[1];
+			//the most we can buy of the first currency is either our volume limit or the limit of the ask order -- whichever is less
+			$max_one = ($first_pair_array[1] < ($volume / $first_pair_array[0])) ? $first_pair_array[1] : ($volume / $first_pair_array[0]);	
 
-			echo "<p>$volume $max_one $max_two $max_three</p>";
+			//checking if max_one is bounded by the amount we can buy in the second and third
+			if($max_one * $second_pair_array[2] > $second_pair_array[3]) {
+				$max_one = $second_pair_array[3] / $second_pair_array[2];
+			}
 
-			return array($max_one, $max_two, $max_three);
+			//the most we can sell of the second currency is either the limit by how much we bought of the first or by the bid order -- whichever is less
+			$max_two = (($max_one * $second_pair_array[2]) < $second_pair_array[3]) ? ($max_one * $second_pair_array[2]) : $second_pair_array[3];
+
+			//checking if max_two is bounded by the amount we can buy in the third
+			if($max_two * $third_pair_array[2] > $third_pair_array[3]) {
+				$max_two = $third_pair_array[3] / $third_pair_array[2];
+				$max_one = $max_two / $second_pair_array[2];				//TODO verify this line works (hard to find real data for it)
+			}
+
+			//the most we can sell of the third currency is either the limit by how much we have of the second or by the bid order -- whichever is elss
+			$max_three = (($max_two * $third_pair_array[2]) < $third_pair_array[3]) ? ($max_two * $third_pair_array[2]) : $third_pair_array[3];
+
+			//some variables to calculate profit
+			$starting = $max_one * $second_pair_array[2];
+			$profit = ($max_three - $starting) / $starting;
+
+			return array($max_one, $max_two, $max_three, $profit, $starting);
 		}
 		//first to third to second to first
 		else {
-			$max_one = ($volume < ($third_pair_array[3] / $third_pair_array[2])) ? $volume : ($third_pair_array[3] * $third_pair_array[2]);
-			$max_two = (($max_one / $second_pair_array[2]) < $second_pair_array[3]) ? ($max_one * $second_pair_array[2]) : $second_pair_array[3];
-			$max_three = (($max_two / $first_pair_array[0]) < $first_pair_array[1]) ? ($max_two * $first_pair_array[0]) : $first_pair_array[1];
+			$max_one = ($third_pair_array[1] < ($volume * $third_pair_array[0])) ? $third_pair_array[1] : ($volume * $third_pair_array[0]);
 
-			echo "<p>$volume $max_one $max_two $max_three</p>";
+			//checking if max_one is bounded by the amount we can buy in the second and third
+			if($max_one * $second_pair_array[0] > $second_pair_array[1]) {
+				$max_one = $second_pair_array[1] / $second_pair_array[0];
+			}
 
-			return array($max_one, $max_two, $max_three);
+			//the most we can sell of the second currency is either the limit by how much we bought of the first or by the bid order -- whichever is less
+			$max_two = (($second_pair_array[0] * $max_one) < $second_pair_array[1]) ? ($max_one * $second_pair_array[0]) : $second_pair_array[1];
+
+			//checking if max_two is bounded by the amount we can buy in the third
+			if($max_two * $first_pair_array[2] > $first_pair_array[3]) {
+				$max_two = $first_pair_array[3] / $first_pair_array[2];
+				$max_one = $max_two / $second_pair_array[2];				//TODO verify this line works (hard to find real data for it)
+			}
+
+			//the most we can sell of the third currency is either the limit by how much we have of the second or by the bid order -- whichever is elss
+			$max_three = (($max_two / $first_pair_array[2]) < $first_pair_array[3]) ? ($max_two / $first_pair_array[2]) : $first_pair_array[3];
+
+			//some variables to calculate profit
+			$starting = $max_one * $second_pair_array[0];
+			$profit = ($max_three - $starting) / $starting;
+
+			return array($max_one, $max_two, $max_three, $profit, $starting);
 		}
 	}
 
@@ -107,14 +141,14 @@
 			$third = $second * $first_pair_array[0];
 
 			//echos for testing purposes
-			echo "<p>1 BTC = $first $third_pair_sub ($third_pair_array[2])</p>";
-			echo "<p>= $second $second_pair_sub ($second_pair_array[2])</p>";
-			echo "<p>= $third BTC ($first_pair_array[0])</p>";
+			// echo "<p>1 BTC = $first $third_pair_sub ($third_pair_array[2])</p>";
+			// echo "<p>= $second $second_pair_sub ($second_pair_array[2])</p>";
+			// echo "<p>= $third BTC ($first_pair_array[0])</p>";
 
 			//percent gain
 			$first_gain = ($third - 1) * 100;
 			$first_rounded_gain = number_format((float)$first_gain, 2, '.', '');
-			echo "<p>Percent gain: $first_rounded_gain";
+			echo "<p>Ideal percent gain: $first_rounded_gain";
 
 			echo "<p>Testing arbitrage from BTC to $second_pair_sub to $third_pair_sub to BTC</p>";
 
@@ -123,34 +157,27 @@
 			$third = $second * $third_pair_array[0];
 
 			//echos for testing purposes
-			echo "<p>1 BTC = $first $second_currency_sub ($first_pair_array[2])</p>";
-			echo "<p>= $second $third_currency_sub ($second_pair_array[0])</p>";
-			echo "<p>= $third BTC ($third_pair_array[0])</p>";
+			// echo "<p>1 BTC = $first $second_currency_sub ($first_pair_array[2])</p>";
+			// echo "<p>= $second $third_currency_sub ($second_pair_array[0])</p>";
+			// echo "<p>= $third BTC ($third_pair_array[0])</p>";
 
-			$max_trades_array = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 0, 1);
-			$max_trades_array2 = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 1, 1);
+			$max_trades_array = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 0, 100000);
+			$max_trades_array2 = find_max_trades($first_pair_array, $second_pair_array, $third_pair_array, 1, 100000);
 
 			//percent gain
 			$second_gain = ($third - 1) * 100;
 			$second_rounded_gain = number_format((float)$second_gain, 2, '.', '');
-			echo "<p>Percent gain: $second_rounded_gain";
+			echo "<p>Ideal percent gain: $second_rounded_gain";
 
-			echo "<p><br>Trade BTC for $max_trades_array[0] DASH. Sell $max_trades_array[1] DASH for XMR. Sell $max_trades_array[2] XMR for BTC.</p>";
-			echo "<p><br>Trade BTC for $max_trades_array2[0] XMR. Buy $max_trades_array2[1] DASH with XMR. Sell $max_trades_array2[2] DASH for BTC.</p>";
+			echo "<p><br>Trade $max_trade_array[4] BTC for $max_trades_array[0] DASH. Sell DASH for $max_trades_array[1] XMR. Sell XMR for $max_trades_array[2] BTC. Profit = $max_trades_array[3]%</p>";
+			echo "<p><br>Trade $max_trade_array2[4] BTC for $max_trades_array2[0] XMR. Buy $max_trades_array2[1] DASH with XMR. Sell DASH for $max_trades_array2[2] BTC. Profit = $max_trades_array2[3]%</p>";
 			
-			echo "<p>$first_pair_array[0] $first_pair_array[1] $first_pair_array[2] $first_pair_array[3] </p>";
-			echo "<p>$second_pair_array[0] $second_pair_array[1] $second_pair_array[2] $second_pair_array[3] </p>";
-			echo "<p>$third_pair_array[0] $third_pair_array[1] $third_pair_array[2] $third_pair_array[3] </p>";
+			//echos for prices for testing purposes
+			// echo "<p>DASH_BTC $first_pair_array[0] $first_pair_array[1] $first_pair_array[2] $first_pair_array[3] </p>";
+			// echo "<p>DASH_XMR $second_pair_array[0] $second_pair_array[1] $second_pair_array[2] $second_pair_array[3] </p>";
+			// echo "<p>XMR_BTC $third_pair_array[0] $third_pair_array[1] $third_pair_array[2] $third_pair_array[3] </p>";
 
-			if($first_gain > $second_gain && $first_gain > 0.3) {
-				return array(1, 0, 'work in progress');
-			}
-			else if($second_gain > $first_gain && $second_gain > 0.3) {
-				return array(0, 1, 'work in progress');
-			}
-			else {
-				return array(0, 0, 0);
-			}
+			//TODO add better returns to be handled in handle_arbitrage
 		}
 	}
 
