@@ -81,8 +81,10 @@
 			$max_three = (($max_two * $third_pair_array[2]) < $third_pair_array[3]) ? ($max_two * $third_pair_array[2]) : $third_pair_array[3];
 
 			//some variables to calculate profit
-			$starting = $max_one * $second_pair_array[2];
+			$starting = $max_one * $first_pair_array[0];
 			$profit = ($max_three - $starting) / $starting;
+
+			echo "<p>Profit: $profit from $starting BTC</p>";
 
 			return array($max_one, $max_two, $max_three, $profit, $starting);
 		}
@@ -108,8 +110,10 @@
 			$max_three = (($max_two * $first_pair_array[2]) < $first_pair_array[3]) ? ($max_two * $first_pair_array[2]) : $first_pair_array[3];
 
 			//some variables to calculate profit
-			$starting = $max_one * $second_pair_array[0];
+			$starting = $max_one * $third_pair_array[0];
 			$profit = ($max_three - $starting) / $starting;
+
+			echo "<p>Profit: $profit from $starting BTC</p>";
 
 			return array($max_one, $max_two, $max_three, $profit, $starting);
 		}
@@ -169,13 +173,13 @@
 			$second_rounded_gain = number_format((float)$second_gain, 2, '.', '');
 			echo "<p>Ideal percent gain: $second_rounded_gain";
 
-			echo "<p><br>Trade $max_trade_array[4] BTC for $max_trades_array[0] DASH. Sell DASH for $max_trades_array[1] XMR. Sell XMR for $max_trades_array[2] BTC. Profit = $max_trades_array[3]%</p>";
-			echo "<p><br>Trade $max_trade_array2[4] BTC for $max_trades_array2[0] XMR. Buy $max_trades_array2[1] DASH with XMR. Sell DASH for $max_trades_array2[2] BTC. Profit = $max_trades_array2[3]%</p>";
+			echo "<p><br>Trade $max_trade_array[4] BTC for $max_trades_array[0] $first_pair_sub. Sell $first_pair_sub for $max_trades_array[1] $third_pair_sub. Sell $second_pair_sub for $max_trades_array[2] BTC. Profit = $max_trades_array[3]%</p>";
+			echo "<p><br>Trade $max_trade_array2[4] BTC for $max_trades_array2[0] $third_pair_sub. Buy $max_trades_array2[1] $first_pair_sub with $third_pair_sub. Sell $first_pair_sub for $max_trades_array2[2] BTC. Profit = $max_trades_array2[3]%</p>";
 			
 			//echos for prices for testing purposes
-			echo "<p>DASH_BTC $first_pair_array[0] $first_pair_array[1] $first_pair_array[2] $first_pair_array[3] </p>";
-			echo "<p>DASH_XMR $second_pair_array[0] $second_pair_array[1] $second_pair_array[2] $second_pair_array[3] </p>";
-			echo "<p>XMR_BTC $third_pair_array[0] $third_pair_array[1] $third_pair_array[2] $third_pair_array[3] </p>";
+			echo "<p>$first_pair $first_pair_array[0] $first_pair_array[1] $first_pair_array[2] $first_pair_array[3] </p>";
+			echo "<p>$second_pair $second_pair_array[0] $second_pair_array[1] $second_pair_array[2] $second_pair_array[3] </p>";
+			echo "<p>$third_pair $third_pair_array[0] $third_pair_array[1] $third_pair_array[2] $third_pair_array[3] </p>";
 
 			//TODO add better returns to be handled in handle_arbitrage
 		}
@@ -183,6 +187,18 @@
 
 	function handle_arbitrage() {
 		$array = search_arbitrage('BTC_DASH', 'XMR_DASH', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
+		echo '<hr>';
+		$array2 = search_arbitrage('BTC_LTC', 'XMR_LTC', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
+		echo '<hr>';
+		$array3 = search_arbitrage('BTC_BLK', 'XMR_BLK', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
+		echo '<hr>';
+		$array4 = search_arbitrage('BTC_BBR', 'XMR_BBR', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
+		echo '<hr>';
+		$array5 = search_arbitrage('BTC_DIEM', 'XMR_DIEM', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
+		echo '<hr>';
+		$array6 = search_arbitrage('BTC_QORA', 'XMR_QORA', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
+		echo '<hr>';
+		$array7 = search_arbitrage('BTC_XDN', 'XMR_XDN', 'BTC_XMR', 'EGNLC8SU-OXMKD4MV-3YGWKWH7-39AXHKCL', 'a49c400a00269220e895bfba6a48eb57bb8a1398ca80022969d91a27e480de0316d47aa8aac2148a02cf0dc14314142aa1701ed0dbf85692e85417a45be18ad1');
 
 		//make trades below
 		/*if($array[0] === 1 && $array[1] === 0) {
