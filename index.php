@@ -9,11 +9,10 @@
 	//					 'bids'     -> with an array of bid price and quantity for that price
 	//					 'isFrozen' -> 0 not frozen (good), 1 frozen (bad)
 	function find_best_prices($pair, $key, $secret) {
+		
 		$object = new poloniex($key, $secret);
 		$orders = $object->get_order_book($pair);
 	
-
-
 		//bid is buy order
 		//ask is a sell order
 		$best_bid = 0.0;
@@ -23,13 +22,8 @@
 
 		//if not frozen (0) - then continue, else we don't wanna even look at the rest
 		//QUESTION: I am assuming the rest of the code handles the fact that the resulting
-		//			values are really bad
+		//			values are what you gave
 		//UPDATE: This should be fast and it makes more sense(readiblity wise)
-
-		echo "<p>NEW NEW NEW:</p>";
-
-		$time_starta = microtime(true); 
-
 		if($orders['isFrozen'] == 0){
 
 			foreach($orders['asks'] as $price_quantity_pair) {
@@ -56,77 +50,6 @@
 					}
 				}
 			}
-		}
-
-		$time_enda = microtime(true);
-		$execution_timea = ($time_enda - $time_starta);
-		echo '<p><b>Total Execution Time:</b> '.$execution_timea.' </p>';
-
-		$best_bidb = 0.0;
-		$best_bid_quantityb = 0;
-		$best_askb = 10000000.0;
-		$best_ask_quantityb = 0;
-		$checkb = false;
-
-		echo "<p>OLD OLD OLD:</p>";
-
-
-		$time_start = microtime(true); 
-
-
-
-				foreach($orders as $one => $two) {
-			//$one denotes asks vs bids
-			foreach($two as $three => $four) {
-				foreach($four as $five => $six) {
-					//$five denotes price(0) or quantity(1), $six is value
-					//beware that index 0 does not have anything meaningful
-					if($one === 'asks') {
-						//if we just found the best price, update the quantity
-						if($check === true && $five === 1) {
-							$best_ask_quantity = $six;
-							$check = false;
-						}
-						//if this is the best price, update it
-						if($five === 0 && $six < $best_ask) {	
-							$best_ask = $six;
-							$check = true;
-						}
-					}
-					else if ($one === 'bids') {
-						//if we just found the best price, update the quantity
-						if($check === true && $five === 1) {
-							$best_bid_quantity = $six;
-							$check = false;
-						}
-						//if this is the best price, update it
-						if($five === 0 && $six > $best_bid) {
-							$best_bid = $six;
-							$check = true;
-						}
-					}
-				}
-			}
-		}
-
-		$time_end = microtime(true);
-		$execution_time = ($time_end - $time_start);
-		echo '<p><b>Total Execution Time:</b> '.$execution_time.' </p>';
-
-		if($execution_time > $execution_timea){
-			echo '<p><b>new faster</b></p> ';
-		} else {
-			echo '<p><b>old faster</b></p> ';
-		}
-
-		if($best_bid == $best_bidb && $best_ask == $best_askb && $best_ask_quantity == $best_ask_quantityb && $best_bid_quantity == $best_bid_quantityb){
-			echo '<p><b>All Equal</b><p>';
-		} else {
-			echo '<p><b>Not All Equal</b><p>';
-			echo "<p>$best_bid ? $best_bidb</p>";
-			echo "<p>$best_ask ? $best_askb</p>";
-			echo "<p>$best_ask_quantity ? $best_ask_quantityb</p>";
-			echo "<p>$best_bid_quantity ? $best_bid_quantityb</p>";
 		}
 
 		return array($best_ask, $best_ask_quantity, $best_bid, $best_bid_quantity);
