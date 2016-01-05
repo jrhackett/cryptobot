@@ -4,22 +4,78 @@
 
 	require 'poloniex_wrapper.php';
 
-	//returns array holding best asking price, the quantity for that price, best bid price, and best quantity for that price
+
+	//returns 'map' with 'asks'     -> with an array of asking price and quantity for that price and
+	//					 'bids'     -> with an array of bid price and quantity for that price
+	//					 'isFrozen' -> 0 not frozen (good), 1 frozen (bad)
 	function find_best_prices($pair, $key, $secret) {
 		$object = new poloniex($key, $secret);
 		$orders = $object->get_order_book($pair);
-		
+	
+
+
 		//bid is buy order
 		//ask is a sell order
-
 		$best_bid = 0.0;
 		$best_bid_quantity = 0;
 		$best_ask = 10000000.0;
 		$best_ask_quantity = 0;
-		$check = false;
 
-		//TODO handle the isFrozen variable to assure that we are not trading with frozen markets
-		foreach($orders as $one => $two) {
+		//if not frozen (0) - then continue, else we don't wanna even look at the rest
+		//QUESTION: I am assuming the rest of the code handles the fact that the resulting
+		//			values are really bad
+		//UPDATE: This should be fast and it makes more sense(readiblity wise)
+
+		echo "<p>NEW NEW NEW:</p>";
+
+		$time_starta = microtime(true); 
+
+		if($orders['isFrozen'] == 0){
+
+			foreach($orders['asks'] as $price_quantity_pair) {
+
+				$price = $price_quantity_pair[0];
+				$quantity =$price_quantity_pair[1];
+
+				if($price < $best_ask) {	
+					$best_ask = $price;
+					$best_ask_quantity = $quantity;
+				}	
+			}
+
+			foreach($orders['bids'] as $price_quantity_pair) {
+				
+				foreach($price_quantity_pair as $price => $quantity) {
+
+					$price = $price_quantity_pair[0];
+					$quantity =$price_quantity_pair[1];
+
+					if($price > $best_bid){
+						$best_bid = $price;
+						$best_bid_quantity = $quantity;
+					}
+				}
+			}
+		}
+
+		$time_enda = microtime(true);
+		$execution_timea = ($time_enda - $time_starta);
+		echo '<p><b>Total Execution Time:</b> '.$execution_timea.' </p>';
+
+		$best_bidb = 0.0;
+		$best_bid_quantityb = 0;
+		$best_askb = 10000000.0;
+		$best_ask_quantityb = 0;
+		$checkb = false;
+
+		echo "<p>OLD OLD OLD:</p>";
+
+
+		$time_start = microtime(true); 
+
+
+
+				foreach($orders as $one => $two) {
 			//$one denotes asks vs bids
 			foreach($two as $three => $four) {
 				foreach($four as $five => $six) {
@@ -51,6 +107,26 @@
 					}
 				}
 			}
+		}
+
+		$time_end = microtime(true);
+		$execution_time = ($time_end - $time_start);
+		echo '<p><b>Total Execution Time:</b> '.$execution_time.' </p>';
+
+		if($execution_time > $execution_timea){
+			echo '<p><b>new faster</b></p> ';
+		} else {
+			echo '<p><b>old faster</b></p> ';
+		}
+
+		if($best_bid == $best_bidb && $best_ask == $best_askb && $best_ask_quantity == $best_ask_quantityb && $best_bid_quantity == $best_bid_quantityb){
+			echo '<p><b>All Equal</b><p>';
+		} else {
+			echo '<p><b>Not All Equal</b><p>';
+			echo "<p>$best_bid ? $best_bidb</p>";
+			echo "<p>$best_ask ? $best_askb</p>";
+			echo "<p>$best_ask_quantity ? $best_ask_quantityb</p>";
+			echo "<p>$best_bid_quantity ? $best_bid_quantityb</p>";
 		}
 
 		return array($best_ask, $best_ask_quantity, $best_bid, $best_bid_quantity);
